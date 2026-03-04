@@ -509,6 +509,20 @@ class IsaacLabEngine(engine.Engine):
 
         return dof_low.numpy(), dof_high.numpy()
     
+    def get_obj_pd_gains(self, env_id, obj_id):
+        obj = self._objs[obj_id]
+        actuator = obj.actuators["actuators"]
+        kp = actuator.stiffness[env_id]
+        kd = actuator.damping[env_id]
+
+        dof_order_sim2common = self._dof_order_sim2common[obj_id]
+        kp = kp[dof_order_sim2common]
+        kd = kd[dof_order_sim2common]
+        kp = kp.cpu().numpy()
+        kd = kd.cpu().numpy()
+
+        return kp, kd
+    
     def find_obj_body_id(self, obj_id, body_name):
         obj = self._objs[obj_id]
         meta_data = obj.root_physx_view.shared_metatype
@@ -600,7 +614,7 @@ class IsaacLabEngine(engine.Engine):
         ground_path = GROUND_PATH
 
         env_offset_max = torch.max(torch.abs(self._env_offsets)).item()
-        texture_width = max(100.0, 3.0 * env_offset_max)
+        texture_width = 2.0 * env_offset_max + 100.0
 
         physics_material = sim_utils.RigidBodyMaterialCfg(static_friction=1.0, dynamic_friction=1.0,
                                                           restitution=0.0)
